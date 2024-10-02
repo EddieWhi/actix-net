@@ -22,7 +22,7 @@ use tokio::sync::{
     mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
     oneshot,
 };
-use tracing::{error, info, trace};
+use tracing::{error, info, trace, warn};
 
 use crate::{
     service::{BoxedServerService, InternalServiceFactory},
@@ -673,6 +673,11 @@ impl Future for ServerWorker {
                 } else if shutdown.start_from.elapsed() >= this.shutdown_timeout {
                     // timeout forceful shutdown
                     if let WorkerState::Shutdown(shutdown) = mem::take(&mut this.state) {
+                        warn!(
+                            "graceful shutdown did not complete within {:?}, forcefully shutting down",
+                            this.shutdown_timeout
+                        );
+
                         let _ = shutdown.tx.send(false);
                     }
 
